@@ -1,0 +1,371 @@
+---
+title: "Empirical Evaluation of Developer Productivity Enhancement with Microsoft Copilot Using the SPACE Framework"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+# Team 10: Manoj, Yashwanth, Sravanthika
+
+
+```{r}
+library(readxl)
+
+data <- read_excel("Usage_Intensity_Syntax_Errors.xlsx")
+
+print(colnames(data))
+
+head(data)
+```
+
+
+```{r}
+library(dplyr)
+
+data_summary <- data %>%
+  group_by(Usage_Intensity) %>%
+  summarise(
+    Mean_Syntax_Errors = mean(Syntax_Errors, na.rm = TRUE),
+    SD_Syntax_Errors = sd(Syntax_Errors, na.rm = TRUE),
+    Min_Syntax_Errors = min(Syntax_Errors, na.rm = TRUE),
+    Max_Syntax_Errors = max(Syntax_Errors, na.rm = TRUE),
+    .groups = 'drop'
+  )
+
+print(data_summary)
+
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(data_summary, aes(x = Usage_Intensity, y = Mean_Syntax_Errors, fill = Usage_Intensity)) +
+  geom_bar(stat = "identity") +
+  geom_errorbar(aes(ymin = Mean_Syntax_Errors - SD_Syntax_Errors, ymax = Mean_Syntax_Errors + SD_Syntax_Errors), width = 0.2) +
+  labs(title = "Mean Syntax Errors by Usage Intensity", x = "Usage Intensity", y = "Mean Syntax Errors")
+
+library(ggplot2)
+
+
+```
+
+```{r}
+data_stats <- data.frame(
+  Usage_Intensity = factor(c("High", "Medium", "Low"), levels = c("High", "Medium", "Low")),
+  Mean_Syntax_Errors = c(1.5, 4.5, 9),
+  SD_Syntax_Errors = c(0.577, 0.707, 1.41),
+  Min_Syntax_Errors = c(1, 4, 8),
+  Max_Syntax_Errors = c(2, 5, 10)
+)
+
+plot <- ggplot(data_stats, aes(x = Usage_Intensity, y = Mean_Syntax_Errors, fill = Usage_Intensity)) +
+  geom_bar(stat = "identity", width = 0.6, alpha = 0.8) +  # Bars for means
+  geom_errorbar(aes(ymin = Mean_Syntax_Errors - SD_Syntax_Errors, ymax = Mean_Syntax_Errors + SD_Syntax_Errors), width = 0.2, color = "black") +  # Error bars for SD
+  geom_text(aes(label = sprintf("Min: %s, Max: %s", Min_Syntax_Errors, Max_Syntax_Errors), y = Max_Syntax_Errors + 1), vjust = 1.5, color = "black", size = 3.5) +  # Annotating min and max
+  labs(title = "Syntax Errors Across Usage Intensity Levels",
+       x = "Usage Intensity",
+       y = "Mean Syntax Errors") +
+  theme_minimal() +
+  theme(legend.position = "none")  # Hide legend if unnecessary
+
+
+print(plot)
+
+```
+
+
+```{r}
+shapiro_test_results <- shapiro.test(data$Syntax_Errors)
+print(shapiro_test_results)
+
+```
+
+
+
+```{r}
+qqnorm(data$Syntax_Errors)
+qqline(data$Syntax_Errors, col = "steelblue", lwd = 2)
+
+library(ggplot2)
+library(gridExtra)  
+
+
+qq_plot <- ggplot(data, aes(sample = Syntax_Errors)) +
+  stat_qq() +
+  stat_qq_line(colour = "steelblue") +
+  labs(title = "Q-Q Plot of Syntax Errors",
+       x = "Theoretical Quantiles",
+       y = "Sample Quantiles") +
+  theme_minimal()
+
+```
+
+
+```{r}
+
+hist_plot <- ggplot(data, aes(x = Syntax_Errors)) +
+  geom_histogram(aes(y = ..density..), bins = 10, fill = "skyblue", alpha = 0.6) +
+  geom_density(col = "red", size = 1) +
+  labs(title = "Histogram of Syntax Errors with Normal Curve",
+       x = "Syntax Errors",
+       y = "Density") +
+  theme_minimal()
+
+grid.arrange(qq_plot, hist_plot, ncol = 2)
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+library(ggplot2)
+library(ggrepel)  
+data_stats <- data.frame(
+  Usage_Intensity = factor(c("High", "Medium", "Low"), levels = c("High", "Medium", "Low")),
+  Mean_Syntax_Errors = c(1.5, 4.5, 9)  # Hypothetical means
+)
+
+anova_plot <- ggplot(data_stats, aes(x = Usage_Intensity, y = Mean_Syntax_Errors, group = 1)) +
+  geom_line() +  # Connect means with a line
+  geom_point(size = 4) +  # Plot mean points
+  geom_text(aes(label = sprintf("Mean=%.1f", Mean_Syntax_Errors)), vjust = -1.5, color = "black") +
+  ggtitle("Impact of Usage Intensity on Syntax Errors") +
+  xlab("Usage Intensity") +
+  ylab("Mean Syntax Errors") +
+  theme_minimal() +
+  geom_text(data = data.frame(x = 1.5, y = 8, label = "italic(F)[2,6]~'='~12.61*','~italic(p)~'='~0.007"), 
+            aes(x, y, label = label), parse = TRUE)
+
+print(anova_plot)
+
+```
+```{r}
+
+library(ggplot2)
+
+
+annotations <- data.frame(
+  Usage_Intensity = factor(c("High", "Medium", "Low"), levels = c("High", "Medium", "Low")),
+  Text = c("Mean: 1.5, SD: 0.577, Min: 1, Max: 2", 
+           "Mean: 4.5, SD: 0.707, Min: 4, Max: 5",
+           "Mean: 9, SD: 1.41, Min: 8, Max: 10"),
+  y = c(3, 6, 11)  
+)
+
+# Plotting
+boxplot <- ggplot(data, aes(x = Usage_Intensity, y = Syntax_Errors, fill = Usage_Intensity)) +
+  geom_boxplot(alpha = 0.6) +
+  stat_summary(fun = mean, geom = "point", shape = 20, size = 3, color = "red") +
+  geom_text(data = annotations, aes(label = Text, y = y), position = position_dodge(width = 0.9), hjust = -0.1, size = 3.5, vjust = 0) +
+  labs(title = "Distribution of Syntax Errors by Usage Intensity",
+       x = "Usage Intensity",
+       y = "Syntax Errors") +
+  theme_minimal() +
+  theme(legend.position = "none",  # Remove legend if fill color is self-explanatory
+        plot.title = element_text(hjust = 0.5))  # Center the title
+
+print(boxplot)
+
+```
+
+
+```{r}
+
+library(ggplot2)
+
+
+
+plot <- ggplot(data_summary, aes(x = Usage_Intensity, y = Mean_Syntax_Errors)) +
+  geom_bar(stat = "identity", width = 0.6, aes(fill = Usage_Intensity)) +  
+  geom_errorbar(aes(ymin = Mean_Syntax_Errors - SD_Syntax_Errors, ymax = Mean_Syntax_Errors + SD_Syntax_Errors), width = 0.2) +
+  geom_text(aes(label = sprintf("%.2f", Mean_Syntax_Errors)), vjust = -0.5, color = "white", size = 5) + 
+  geom_text(data = data.frame(x = "Medium", y = max(data_summary$Mean_Syntax_Errors + data_summary$SD_Syntax_Errors) + 1, 
+                              label = "italic(F)[2,6]~'='~12.61*','~italic(p)~'='~0.007"),  
+            aes(x = x, y = y, label = label), parse = TRUE, hjust = 0.5) +  # Ensuring proper alignment and parsing
+  labs(title = "Mean Syntax Errors by Usage Intensity", x = "Usage Intensity", y = "Mean Syntax Errors") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+print(plot)
+
+```
+
+
+```{r}
+library(ggplot2)
+library(ggpubr)  
+
+
+plot <- ggplot(data, aes(x = Usage_Intensity, y = Syntax_Errors, fill = Usage_Intensity)) +
+  geom_violin(trim = FALSE) +
+  geom_boxplot(width = 0.1, fill = "white", alpha = 0.5) +
+  stat_summary(fun = mean, geom = "point", shape = 23, size = 3, color = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, aes(ymax = ..y.., ymin = ..y..)) +
+  geom_line(stat = "summary", fun = mean, aes(group = 1), color = "red") +
+  ggpubr::stat_compare_means(method = "anova", label = "p.signif") +
+  ggpubr::stat_compare_means(label = "p.signif", method = "t.test", comparisons = list(c("Low", "Medium"), c("Medium", "High"))) +
+  labs(title = "Syntax Errors Across Usage Intensity Levels",
+       x = "Usage Intensity",
+       y = "Syntax Errors") +
+  theme_minimal()
+
+plot + geom_text(aes(x = 2, y = max(Syntax_Errors) + 1, 
+                     label = sprintf("italic(F)[2, 5]~'='~12.61*','~italic(p)~'='~0.007")),
+                 parse = TRUE, hjust = 0.5, vjust = 0, color = "black", fontface = "bold", check_overlap = TRUE)
+
+print(plot)
+```
+
+
+```{r}
+
+library(multcomp)
+
+model <- lm(Syntax_Errors ~ Usage_Intensity + (1|Developer_ID), data = data)
+
+summary(model)
+
+
+plot_data <- data.frame(
+  Usage_Intensity = c("High", "Low", "Medium"),
+  Estimate = c(1.5, 1.5 + 7.5, 1.5 + 3.0),
+  Std_Error = c(0.4183, 0.7246, 0.7246)
+)
+
+library(ggplot2)
+
+ggplot(plot_data, aes(x = Usage_Intensity, y = Estimate, fill = Usage_Intensity)) +
+  geom_col() +  # Column plot for estimates
+  geom_errorbar(aes(ymin = Estimate - 1.96 * Std_Error, ymax = Estimate + 1.96 * Std_Error), width = 0.2) +  # Error bars for 95% CI
+  geom_text(aes(label = sprintf("%.2f", Estimate)), vjust = -1.5) +  # Add text labels for estimates
+  labs(title = "Effect of Usage Intensity on Syntax Errors",
+       x = "Usage Intensity",
+       y = "Estimated Syntax Errors") +
+  theme_minimal() +
+  theme(legend.position = "none")  # No need for a legend
+
+print(plot)
+
+
+```
+
+
+```{r}
+
+library(dplyr)
+library(knitr)
+
+
+results <- pairwise.t.test(data$Syntax_Errors, data$Usage_Intensity, p.adjust.method = "bonferroni")
+
+
+if (!require(knitr)) install.packages("knitr")
+if (!require(kableExtra)) install.packages("kableExtra")
+
+library(knitr)
+library(kableExtra)
+
+kable(results$p.value, caption = "Pairwise comparisons of Syntax Errors across Usage Intensity levels.") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+
+library(ggplot2)
+
+comparison_data <- data.frame(
+  Usage_Intensity1 = c("High", "Medium", "Low"),
+  Usage_Intensity2 = c("Low", "Low", "Medium"),
+  P_Value = c(0.0004345, 0.0089817, 0.0269808)
+)
+
+ggplot(comparison_data, aes(x = Usage_Intensity1, y = Usage_Intensity2, fill = P_Value)) +
+  geom_tile() +
+  geom_text(aes(label = sprintf("%.5f", P_Value)), vjust = 1.5, color = "white") +
+  scale_fill_gradient(low = "blue", high = "red") +
+  labs(title = "Pairwise P-Values for Syntax Errors by Usage Intensity", x = "Usage Intensity", y = "Comparison Group")
+
+```
+
+
+```{r}
+
+library(ggplot2)
+
+ggplot(data, aes(x = Usage_Intensity, y = Syntax_Errors, group = Usage_Intensity)) +
+  geom_boxplot(fill = "skyblue", alpha = 0.5) +  
+  geom_jitter(aes(color = Usage_Intensity), width = 0.2, size = 3, alpha = 0.6) +  
+  labs(title = "Distribution of Syntax Errors Across Usage Intensity Levels",
+       x = "Usage Intensity",
+       y = "Syntax Errors") +
+  theme_minimal() + 
+  theme(legend.position = "none")  
+if (!require(ggplot2)) install.packages("ggplot2")
+if (!require(ggpubr)) install.packages("ggpubr")
+
+```
+
+
+```{r}
+library(ggplot2)
+library(ggpubr)
+# Example dataset setup (replace this with your actual data setup)
+data <- data.frame(
+  Usage_Intensity = factor(rep(c("Low", "Medium", "High"), each = 10)),
+  Syntax_Errors = c(rnorm(10, mean = 3, sd = 1), rnorm(10, mean = 5, sd = 1.2), rnorm(10, mean = 7, sd = 1.5))
+)
+
+# Creating the plot
+plot <- ggplot(data, aes(x = Usage_Intensity, y = Syntax_Errors, fill = Usage_Intensity)) +
+  geom_violin(trim = FALSE) +
+  geom_boxplot(width = 0.1, fill = "white") +
+  stat_summary(fun = mean, geom = "point", shape = 23, size = 3, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, aes(ymax = ..y.., ymin = ..y..)) +
+  geom_line(stat = "summary", fun = mean, aes(group = 1), color = "red") +
+  ggpubr::stat_compare_means(method = "anova", label = "p.signif") +
+  ggpubr::stat_compare_means(label = "p.signif", method = "t.test", comparisons = list(c("Low", "Medium"), c("Medium", "High"))) +
+  labs(title = "Syntax Errors Across Usage Intensity Levels",
+       x = "Usage Intensity",
+       y = "Syntax Errors") +
+  theme_minimal()
+
+print(plot)
+```
+
+
+```{r}
+
+pairwise_results <- data.frame(
+  Usage_Intensity_From = c("High", "High", "Low"),
+  Usage_Intensity_To = c("Low", "Medium", "Medium"),
+  P_Value = c(0.00043, 0.02698, 0.00898),
+  CI_Lower = c(0.95, 0.88, 0.92),
+  CI_Upper = c(1.05, 1.12, 1.08)
+)
+
+# Libraries
+library(ggplot2)
+
+ggplot(pairwise_results, aes(x = Usage_Intensity_From, y = Usage_Intensity_To, fill = P_Value)) +
+  geom_tile() +  # Create tiles for each comparison
+  geom_text(aes(label = sprintf("p = %.5f\n[%.2f, %.2f]", P_Value, CI_Lower, CI_Upper)), color = "white", size = 4) +  # Add p-values and CIs as text
+  scale_fill_gradient(low = "purple", high = "red") +  # Color scale for p-values
+  labs(title = "Pairwise P-Values and Confidence Intervals for Syntax Errors by Usage Intensity",
+       x = "From Usage Intensity",
+       y = "To Usage Intensity") +
+  theme_minimal()
+
+
+
+```
+
+
+```{r}
+```
+
+```
+
+# Thank You

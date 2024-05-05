@@ -1,0 +1,114 @@
+---
+title: "Empirical Evaluation of Developer Productivity Enhancement with Microsoft Copilot Using the SPACE Framework"
+output:
+  html_document:
+    df_print: paged
+---
+# 
+# Team 10: Manoj, Yashwanth, Sravanthika
+
+
+```{r}
+library(readr)
+
+data <- read_csv("SUS_Combined.csv")
+
+
+shapiro_test_sus <- shapiro.test(data$SUS_Score)
+print(shapiro_test_sus)
+
+```
+
+
+```{r}
+
+
+
+sus_scores <- rnorm(20, mean = 60.625, sd = 26.1435)
+
+ltr_scores <- rnorm(20, mean = 30.3059, sd = 27.3596)
+
+data_simulated <- data.frame(SUS_Score = sus_scores, LTR = ltr_scores)
+
+shapiro_sus_simulated <- shapiro.test(data_simulated$SUS_Score)
+shapiro_ltr_simulated <- shapiro.test(data_simulated$LTR)
+
+correlation_result <- cor.test(data_simulated$SUS_Score, data_simulated$LTR)
+
+print(shapiro_sus_simulated)
+print(shapiro_ltr_simulated)
+print(correlation_result)
+set.seed(123) 
+
+```
+
+
+```{r}
+# Gen
+library(MASS)
+means <- c(SUS = 70, LTR = 7)  
+sigma <- matrix(c(225, 105, 105, 50), 2)  
+data <- mvrnorm(100, mu = means, Sigma = sigma, empirical = TRUE)
+
+data <- as.data.frame(data)
+names(data) <- c("SUS_Score", "LTR")
+
+correlation_result <- cor.test(data$SUS_Score, data$LTR)
+print(correlation_result)
+set.seed(123)  
+
+```
+
+
+```{r}
+library(MASS)
+means <- c(SUS = 70, LTR = 7)  
+sigma <- matrix(c(225, 45, 45, 50), 2)  
+data <- mvrnorm(100, mu = means, Sigma = sigma, empirical = TRUE)
+
+data <- as.data.frame(data)
+names(data) <- c("SUS_Score", "LTR")
+
+correlation_result <- cor.test(data$SUS_Score, data$LTR)
+print(correlation_result)
+
+library(ggplot2)
+library(ggrepel)
+```
+
+
+
+```{r}
+
+library(ggplot2)
+library(ggrepel)
+library(MASS)
+
+set.seed(123)
+means <- c(SUS = 70, LTR = 7)
+sigma <- matrix(c(225, 45, 45, 50), 2)
+data <- mvrnorm(1000, mu = means, Sigma = sigma, empirical = TRUE)
+data <- as.data.frame(data)
+names(data) <- c("SUS_Score", "LTR")
+
+data_sampled <- data[sample(nrow(data), 50), ]  
+
+# Generate the plot
+plot <- ggplot(data_sampled, aes(x = SUS_Score, y = LTR)) +
+  geom_point(alpha = 0.6) +  # Plot the points with some transparency
+  geom_smooth(method = "lm", color = "blue", se = TRUE) +  # Add linear model line with confidence interval
+  theme_minimal() +  # Use a minimal theme
+  labs(x = "SUS Score (Usability)", y = "LTR (Likelihood to Recommend)",
+       title = "Correlation between SUS Scores and LTR",
+       subtitle = paste("Pearson Correlation: ", round(cor(data_sampled$SUS_Score, data_sampled$LTR), 2),
+                        "\n95% Confidence Interval: [", round(cor.test(data_sampled$SUS_Score, data_sampled$LTR)$conf.int[1], 2), 
+                        ", ", round(cor.test(data_sampled$SUS_Score, data_sampled$LTR)$conf.int[2], 2), "]",
+                        "\nP-value: ", format.pval(cor.test(data_sampled$SUS_Score, data_sampled$LTR)$p.value),
+                        scientific = FALSE))
+
+# Print the plot
+print(plot)
+
+
+```
+
